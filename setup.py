@@ -29,8 +29,8 @@ with open("README.rst") as f:
     LONG_DESCRIPTION = ''.join(f.readlines())
 
 setup(
-    name="SimPEG",
-    version="0.6.2b1",
+    name="simpeg_archive",
+    version="0.9.1 archive",
     packages=find_packages(),
     install_requires=[
         'numpy>=1.7',
