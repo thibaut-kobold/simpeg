@@ -10,9 +10,9 @@ from scipy.sparse.linalg import LinearOperator
 from scipy.interpolate import UnivariateSpline
 from scipy.constants import mu_0
 from scipy.spatial import cKDTree
-from .Utils import mkvc
+from .utils import mkvc
 import properties
-from . import Utils
+from . import utils as Utils
 from .Tests import checkDerivative
 
 

@@ -5,7 +5,7 @@ import scipy.sparse as sp
 import warnings
 import properties
 
-from . import Utils
+from . import utils as Utils
 from . import Maps
 from . import Mesh
 from . import ObjectiveFunction

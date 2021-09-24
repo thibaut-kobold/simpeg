@@ -1,5 +1,5 @@
 from __future__ import print_function
-from . import Utils
+from . import utils as Utils
 from . import Props
 import numpy as np
 import scipy.sparse as sp

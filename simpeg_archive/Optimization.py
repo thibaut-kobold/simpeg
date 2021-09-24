@@ -1,4 +1,4 @@
-from . import Utils
+from . import utils as Utils
 import numpy as np
 import scipy.sparse as sp
 from six import string_types

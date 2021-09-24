@@ -1,4 +1,4 @@
-from . import Utils
+from . import utils as Utils
 from . import Props
 from . import DataMisfit
 from . import Regularization

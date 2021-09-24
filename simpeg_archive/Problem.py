@@ -1,6 +1,6 @@
 from __future__ import print_function
 from discretize.base import BaseMesh
-from . import Utils
+from . import utils as Utils
 from . import Survey
 from . import Models
 import numpy as np

@@ -1,4 +1,4 @@
-from . import Utils
+from . import utils as Utils
 from . import DataMisfit
 import numpy as np
 import matplotlib.pyplot as plt

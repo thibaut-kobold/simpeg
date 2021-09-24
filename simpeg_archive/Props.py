@@ -8,7 +8,7 @@ import numpy as np
 import warnings
 
 from . import Maps
-from . import Utils
+from . import utils as Utils
 
 
 class SphinxProp(object):

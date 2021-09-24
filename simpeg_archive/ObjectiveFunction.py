@@ -9,7 +9,7 @@ from six import integer_types
 import warnings
 import dask
 import dask.array as da
-from . import Utils
+from . import utils as Utils
 from .Tests import checkDerivative
 from . import Maps
 from . import Props

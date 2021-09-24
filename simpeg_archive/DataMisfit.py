@@ -1,7 +1,7 @@
 import numpy as np
 import properties
 
-from . import Utils
+from . import utils as Utils
 from . import Survey
 from . import ObjectiveFunction
 from .Tests import checkDerivative
