@@ -10,7 +10,7 @@ from . import Maps
 from . import Mesh
 from . import ObjectiveFunction
 from . import Props
-from .Utils import mkvc, speye, sdiag, kron3
+from .utils import mkvc, speye, sdiag, kron3
 
 __all__ = [
     'SimpleSmall', 'SimpleSmoothDeriv', 'Simple',

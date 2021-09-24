@@ -4,7 +4,7 @@ from numpy.linalg import norm
 from simpeg_archive.utils import mkvc, sdiag, diagEst
 from simpeg_archive import utils as Utils
 from discretize import TensorMesh, CurvilinearMesh, CylMesh
-from discretize.TreeMesh import TreeMesh as Tree
+from discretize import TreeMesh as Tree
 import scipy.sparse as sp
 import unittest
 import inspect

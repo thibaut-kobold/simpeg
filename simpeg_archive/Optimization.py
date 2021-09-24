@@ -2,7 +2,7 @@ from . import utils as Utils
 import numpy as np
 import scipy.sparse as sp
 from six import string_types
-from .Utils.SolverUtils import *
+from .utils.SolverUtils import *
 
 norm = np.linalg.norm
 from time import time
