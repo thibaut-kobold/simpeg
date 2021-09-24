@@ -1,14 +1,9 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 from six import string_types
 import numpy as np
 from . import utils as Utils
 
 
-class Fields(object):
+class Fields:
     """Fancy Field Storage
 
     u[:,'phi'] = phi
@@ -30,16 +25,14 @@ class Fields(object):
         self._fields = {}
 
         if self.knownFields is None:
-            raise Exception('knownFields cannot be set to None')
+            raise Exception("knownFields cannot be set to None")
         if self.aliasFields is None:
             self.aliasFields = {}
 
-        allFields = (
-            [k for k in self.knownFields] + [a for a in self.aliasFields]
-        )
-        assert len(allFields) == len(set(allFields)), (
-            'Aliased fields and Known Fields have overlapping definitions.'
-        )
+        allFields = [k for k in self.knownFields] + [a for a in self.aliasFields]
+        assert len(allFields) == len(
+            set(allFields)
+        ), "Aliased fields and Known Fields have overlapping definitions."
         self.startup()
 
     def startup(self):
@@ -51,16 +44,18 @@ class Fields(object):
         sz = 0.0
         for f in self.knownFields:
             loc = self.knownFields[f]
-            sz += np.array(self._storageShape(loc)).prod()*8.0/(1024**2)
-        return "{0:e} MB".format(sz)
+            sz += np.array(self._storageShape(loc)).prod() * 8.0 / (1024 ** 2)
+        return f"{sz:e} MB"
 
     def _storageShape(self, loc):
         nSrc = self.survey.nSrc
 
-        nP = {'CC': self.mesh.nC,
-              'N':  self.mesh.nN,
-              'F':  self.mesh.nF,
-              'E':  self.mesh.nE}[loc]
+        nP = {
+            "CC": self.mesh.nC,
+            "N": self.mesh.nN,
+            "F": self.mesh.nF,
+            "E": self.mesh.nE,
+        }[loc]
 
         return (nP, nSrc)
 
@@ -68,7 +63,7 @@ class Fields(object):
         if name in self._fields:
             return self._fields[name]
 
-        assert name in self.knownFields, 'field name is not known.'
+        assert name in self.knownFields, "field name is not known."
 
         loc = self.knownFields[name]
 
@@ -92,23 +87,26 @@ class Fields(object):
     def _nameIndex(self, name, accessType):
 
         if type(name) is slice:
-            assert name == slice(None, None, None), (
-                'Fancy field name slicing is not supported... yet.'
-            )
+            assert name == slice(
+                None, None, None
+            ), "Fancy field name slicing is not supported... yet."
             name = None
 
         if name is None:
             return
-        if accessType == 'set' and name not in self.knownFields:
+        if accessType == "set" and name not in self.knownFields:
             if name in self.aliasFields:
                 raise KeyError(
-                    'Invalid field name ({0!s}) for setter, you can\'t '
-                    'set an aliased property'.format(name))
+                    "Invalid field name ({!s}) for setter, you can't "
+                    "set an aliased property".format(name)
+                )
             else:
-                raise KeyError('Invalid field name ({0!s}) for setter'.format(name))
+                raise KeyError(f"Invalid field name ({name!s}) for setter")
 
-        elif accessType == 'get' and (name not in self.knownFields and name not in self.aliasFields):
-            raise KeyError('Invalid field name ({0!s}) for getter'.format(name))
+        elif accessType == "get" and (
+            name not in self.knownFields and name not in self.aliasFields
+        ):
+            raise KeyError(f"Invalid field name ({name!s}) for getter")
         return name
 
     def _indexAndNameFromKey(self, key, accessType):
@@ -117,7 +115,7 @@ class Fields(object):
         if len(key) == 1:
             key += (None,)
 
-        assert len(key) == 2, 'must be [Src, fieldName]'
+        assert len(key) == 2, "must be [Src, fieldName]"
 
         srcTestList, name = key
         name = self._nameIndex(name, accessType)
@@ -125,23 +123,23 @@ class Fields(object):
         return ind, name
 
     def __setitem__(self, key, value):
-        ind, name = self._indexAndNameFromKey(key, 'set')
+        ind, name = self._indexAndNameFromKey(key, "set")
         if name is None:
-            assert type(value) is dict, (
-                'New fields must be a dictionary, if field is not specified.'
-            )
+            assert (
+                type(value) is dict
+            ), "New fields must be a dictionary, if field is not specified."
             newFields = value
         elif name in self.knownFields:
             newFields = {name: value}
         else:
-            raise Exception('Unknown setter')
+            raise Exception("Unknown setter")
 
         for name in newFields:
             field = self._initStore(name)
             self._setField(field, newFields[name], name, ind)
 
     def __getitem__(self, key):
-        ind, name = self._indexAndNameFromKey(key, 'get')
+        ind, name = self._indexAndNameFromKey(key, "get")
         if name is None:
             out = {}
             for name in self._fields:
@@ -150,7 +148,9 @@ class Fields(object):
         return self._getField(name, ind)
 
     def _setField(self, field, val, name, ind):
-        if isinstance(val, np.ndarray) and (field.shape[0] == field.size or val.ndim == 1):
+        if isinstance(val, np.ndarray) and (
+            field.shape[0] == field.size or val.ndim == 1
+        ):
             val = Utils.mkvc(val, 2)
         field[:, ind] = val
 
@@ -164,10 +164,10 @@ class Fields(object):
             srcII = np.array(self.survey.srcList)[ind]
             srcII = srcII.tolist()
 
-            if isinstance(func, string_types):
+            if isinstance(func, str):
                 assert hasattr(self, func), (
-                    'The alias field function is a string, but it does not '
-                    'exist in the Fields class.'
+                    "The alias field function is a string, but it does not "
+                    "exist in the Fields class."
                 )
                 func = getattr(self, func)
             out = func(self._fields[alias][:, ind], srcII)
@@ -190,10 +190,12 @@ class TimeFields(Fields):
     """
 
     def _storageShape(self, loc):
-        nP = {'CC': self.mesh.nC,
-              'N':  self.mesh.nN,
-              'F':  self.mesh.nF,
-              'E':  self.mesh.nE}[loc]
+        nP = {
+            "CC": self.mesh.nC,
+            "N": self.mesh.nN,
+            "F": self.mesh.nF,
+            "E": self.mesh.nE,
+        }[loc]
         nSrc = self.survey.nSrc
         nT = self.survey.prob.nT + 1
         return (nP, nSrc, nT)
@@ -206,7 +208,7 @@ class TimeFields(Fields):
         if len(key) == 2:
             key += (slice(None, None, None),)
 
-        assert len(key) == 3, 'must be [Src, fieldName, times]'
+        assert len(key) == 3, "must be [Src, fieldName, times]"
 
         srcTestList, name, timeInd = key
 
@@ -240,9 +242,9 @@ class TimeFields(Fields):
             field[:, srcInd, timeInd] = val
             return
         if val.size != np.array(shape).prod():
-            raise ValueError('Incorrect size for data.')
+            raise ValueError("Incorrect size for data.")
         correctShape = field[:, srcInd, timeInd].shape
-        field[:, srcInd, timeInd] = val.reshape(correctShape, order='F')
+        field[:, srcInd, timeInd] = val.reshape(correctShape, order="F")
 
     def _getField(self, name, ind):
         srcInd, timeInd = ind
@@ -252,27 +254,23 @@ class TimeFields(Fields):
         else:
             # Aliased fields
             alias, loc, func = self.aliasFields[name]
-            if isinstance(func, string_types):
+            if isinstance(func, str):
                 assert hasattr(self, func), (
-                    'The alias field function is a string, but it does '
-                    'not exist in the Fields class.'
+                    "The alias field function is a string, but it does "
+                    "not exist in the Fields class."
                 )
                 func = getattr(self, func)
             pointerFields = self._fields[alias][:, srcInd, timeInd]
             pointerShape = self._correctShape(alias, ind)
-            pointerFields = pointerFields.reshape(pointerShape, order='F')
+            pointerFields = pointerFields.reshape(pointerShape, order="F")
 
             timeII = np.arange(self.survey.prob.nT + 1)[timeInd]
             srcII = np.array(self.survey.srcList)[srcInd]
             srcII = srcII.tolist()
 
             if timeII.size == 1:
-                pointerShapeDeflated = self._correctShape(
-                    alias, ind, deflate=True
-                )
-                pointerFields = pointerFields.reshape(
-                    pointerShapeDeflated, order='F'
-                )
+                pointerShapeDeflated = self._correctShape(alias, ind, deflate=True)
+                pointerFields = pointerFields.reshape(pointerShapeDeflated, order="F")
                 out = func(pointerFields, srcII, timeII)
             else:  # loop over the time steps
                 nT = pointerShape[2]
@@ -289,4 +287,4 @@ class TimeFields(Fields):
                 out = np.concatenate(out, axis=2)
 
         shape = self._correctShape(name, ind, deflate=True)
-        return out.reshape(shape, order='F')
+        return out.reshape(shape, order="F")

@@ -3,7 +3,6 @@ from . import DataMisfit
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
-from .PF import Magnetics
 from . import Regularization
 from . import Mesh
 from . import ObjectiveFunction
@@ -1619,110 +1618,6 @@ class ProjSpherical(InversionDirective):
             prob.model = m
 
         self.opt.xc = m
-
-
-class JointAmpMVI(InversionDirective):
-    """
-        Directive controlling the joint inversion of
-        magnetic amplitude data and MVI. Use the vector
-        magnetization model (M) to update the linear amplitude
-        operator.
-
-    """
-
-    amp = None
-    minGNiter = 1
-    jointMVIS = False
-    updateM = False
-
-    def initialize(self):
-
-        # Get current MVI model and update MAI sensitivity
-        # if isinstance(self.prob, list):
-
-        m = self.invProb.model.copy()
-        for prob in self.prob:
-
-            if isinstance(prob, Magnetics.MagneticVector):
-                if prob.coordinate_system == "spherical":
-                    xyz = Magnetics.atp2xyz(
-                        (prob.chiMap * m).reshape((int(len(m) / 3), 3), order="F")
-                    )
-                    self.jointMVIS = True
-                elif prob.coordinate_system == "cartesian":
-                    xyz = prob.chiMap * m
-
-            if isinstance(prob, Magnetics.MagneticAmplitude):
-                self.amp = prob.chiMap * m
-
-        for prob in self.prob:
-            if isinstance(prob, Magnetics.MagneticAmplitude):
-                if self.jointMVIS:
-                    prob.jointMVIS = True
-
-                nC = prob.mesh.nC
-
-                mcol = xyz.reshape((nC, 3), order="F")
-                amp = np.sum(mcol ** 2.0, axis=1) ** 0.5
-                M = Utils.sdiag(1.0 / amp) * mcol
-
-        else:
-            assert "This directive needs to used on a ComboObjective"
-
-    def endIter(self):
-
-        # Get current MVI model and update magnetization model for MAI
-        m = self.invProb.model.copy()
-        for prob in self.prob:
-
-            if isinstance(prob, Magnetics.MagneticVector):
-                if prob.coordinate_system == "spherical":
-                    xyz = Magnetics.atp2xyz(
-                        (prob.chiMap * m).reshape((int(len(m) / 3), 3), order="F")
-                    )
-
-                elif prob.coordinate_system == "cartesian":
-                    xyz = prob.chiMap * m
-
-            if isinstance(prob, Magnetics.MagneticAmplitude):
-                if prob.chiMap.shape[0] == 3 * prob.mesh.nC:
-
-                    nC = prob.mesh.nC
-
-                    mcol = (prob.chiMap * m).reshape((nC, 3), order="F")
-                    self.amp = np.sum(mcol ** 2.0, axis=1) ** 0.5
-                else:
-
-                    self.amp = prob.chiMap * m
-
-        for prob in self.prob:
-            if np.all([isinstance(prob, Magnetics.MagneticAmplitude), self.updateM]):
-
-                nC = prob.mesh.nC
-
-                mcol = xyz.reshape((nC, 3), order="F")
-                amp = np.sum(mcol ** 2.0, axis=1) ** 0.5
-
-                M = Utils.sdiag(1.0 / amp) * mcol
-
-                prob.M = M
-                prob._Mxyz = None
-                prob.Mxyz
-                # if prob.model is None:
-                #     prob.model = prob.chiMap * m
-
-                # ampW = (amp/amp.max() + 1e-2)**-1.
-                # prob.W = ampW
-
-            if isinstance(prob, Magnetics.MagneticVector):
-
-                if (prob.coordinate_system == "cartesian") and (self.amp is not None):
-
-                    ampW = (self.amp / self.amp.max() + 1e-2) ** -1.0
-                    ampW = np.r_[ampW, ampW, ampW]
-
-                    # Scale max values
-                    prob.W = ampW
 
 
 class UpdateApproxJtJ(InversionDirective):

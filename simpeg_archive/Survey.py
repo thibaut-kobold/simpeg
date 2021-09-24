@@ -1,4 +1,3 @@
-from __future__ import print_function
 from . import utils as Utils
 from . import Props
 import numpy as np
@@ -7,16 +6,18 @@ import uuid
 import gc
 
 
-class BaseRx(object):
+class BaseRx:
     """SimPEG Receiver Object"""
 
-    locs = None   #: Locations (nRx x nDim)
+    locs = None  #: Locations (nRx x nDim)
 
-    knownRxTypes = None  #: Set this to a list of strings to ensure that srcType is known
+    knownRxTypes = (
+        None  #: Set this to a list of strings to ensure that srcType is known
+    )
 
-    projGLoc = 'CC'  #: Projection grid location, default is CC
+    projGLoc = "CC"  #: Projection grid location, default is CC
 
-    storeProjections = True #: Store calls to getP (organized by mesh)
+    storeProjections = True  #: Store calls to getP (organized by mesh)
 
     def __init__(self, locs, rxType, **kwargs):
         self.uid = str(uuid.uuid4())
@@ -28,13 +29,14 @@ class BaseRx(object):
     @property
     def rxType(self):
         """Receiver Type"""
-        return getattr(self, '_rxType', None)
+        return getattr(self, "_rxType", None)
+
     @rxType.setter
     def rxType(self, value):
         known = self.knownRxTypes
         if known is not None:
-            assert value in known, (
-                "rxType must be in ['{0!s}']".format(("', '".join(known)))
+            assert value in known, "rxType must be in ['{!s}']".format(
+                "', '".join(known)
             )
         self._rxType = value
 
@@ -68,8 +70,8 @@ class BaseRx(object):
 class BaseTimeRx(BaseRx):
     """SimPEG Receiver Object"""
 
-    times = None   #: Times when the receivers were active.
-    projTLoc = 'N'
+    times = None  #: Times when the receivers were active.
+    projTLoc = "N"
 
     def __init__(self, locs, times, rxType, **kwargs):
         self.times = times
@@ -127,22 +129,21 @@ class BaseTimeRx(BaseRx):
 class BaseSrc(Props.BaseSimPEG):
     """SimPEG Source Object"""
 
-    loc    = None #: Location [x,y,z]
+    loc = None  #: Location [x,y,z]
 
-    rxList = None #: SimPEG Receiver List
+    rxList = None  #: SimPEG Receiver List
     rxPair = BaseRx
 
     def __init__(self, rxList, **kwargs):
-        assert type(rxList) is list, 'rxList must be a list'
+        assert type(rxList) is list, "rxList must be a list"
         for rx in rxList:
-            assert isinstance(rx, self.rxPair), (
-                'rxList must be a {0!s}'.format(self.rxPair.__name__)
+            assert isinstance(rx, self.rxPair), "rxList must be a {!s}".format(
+                self.rxPair.__name__
             )
-        assert len(set(rxList)) == len(rxList), 'The rxList must be unique'
+        assert len(set(rxList)) == len(rxList), "The rxList must be unique"
         self.uid = str(uuid.uuid4())
         self.rxList = rxList
         Utils.setKwargs(self, **kwargs)
-
 
     @property
     def nD(self):
@@ -155,7 +156,7 @@ class BaseSrc(Props.BaseSimPEG):
         return np.array([rx.nD for rx in self.rxList])
 
 
-class Data(object):
+class Data:
     """Fancy data storage by Src and Rx"""
 
     def __init__(self, survey, v=None):
@@ -169,46 +170,44 @@ class Data(object):
 
     def _ensureCorrectKey(self, key):
         if type(key) is tuple:
-            if len(key) is not 2:
-                raise KeyError('Key must be [Src, Rx]')
+            if len(key) != 2:
+                raise KeyError("Key must be [Src, Rx]")
             if key[0] not in self.survey.srcList:
-                raise KeyError('Src Key must be a source in the survey.')
+                raise KeyError("Src Key must be a source in the survey.")
             if key[1] not in key[0].rxList:
-                raise KeyError('Rx Key must be a receiver for the source.')
+                raise KeyError("Rx Key must be a receiver for the source.")
             return key
         elif isinstance(key, self.survey.srcPair):
             if key not in self.survey.srcList:
-                raise KeyError('Key must be a source in the survey.')
+                raise KeyError("Key must be a source in the survey.")
             return key, None
         else:
-            raise KeyError('Key must be [Src] or [Src,Rx]')
+            raise KeyError("Key must be [Src] or [Src,Rx]")
 
     def __setitem__(self, key, value):
         src, rx = self._ensureCorrectKey(key)
-        assert rx is not None, 'set data using [Src, Rx]'
-        assert isinstance(value, np.ndarray), 'value must by ndarray'
-        assert value.size == rx.nD, (
-            "value must have the same number of data as the source."
-        )
+        assert rx is not None, "set data using [Src, Rx]"
+        assert isinstance(value, np.ndarray), "value must by ndarray"
+        assert (
+            value.size == rx.nD
+        ), "value must have the same number of data as the source."
         self._dataDict[src][rx] = Utils.mkvc(value)
 
     def __getitem__(self, key):
         src, rx = self._ensureCorrectKey(key)
         if rx is not None:
             if rx not in self._dataDict[src]:
-                raise Exception('Data for receiver has not yet been set.')
+                raise Exception("Data for receiver has not yet been set.")
             return self._dataDict[src][rx]
 
-        return np.concatenate([self[src,rx] for rx in src.rxList])
+        return np.concatenate([self[src, rx] for rx in src.rxList])
 
     def tovec(self):
         return np.concatenate([self[src] for src in self.survey.srcList])
 
     def fromvec(self, v):
         v = Utils.mkvc(v)
-        assert v.size == self.survey.nD, (
-            'v must have the correct number of data.'
-        )
+        assert v.size == self.survey.nD, "v must have the correct number of data."
         indBot, indTop = 0, 0
         for src in self.survey.srcList:
             for rx in src.rxList:
@@ -217,16 +216,16 @@ class Data(object):
                 indBot += rx.nD
 
 
-class BaseSurvey(object):
+class BaseSurvey:
     """Survey holds the observed data, and the standard deviations."""
 
-    std = None       #: Estimated Standard Deviations
-    eps = None       #: Estimated Noise Floor
-    dobs = None      #: Observed data
-    dtrue = None     #: True data, if data is synthetic
-    mtrue = None     #: True model, if data is synthetic
+    std = None  #: Estimated Standard Deviations
+    eps = None  #: Estimated Noise Floor
+    dobs = None  #: Observed data
+    dtrue = None  #: True data, if data is synthetic
+    mtrue = None  #: True model, if data is synthetic
 
-    counter = None   #: A SimPEG.Utils.Counter object
+    counter = None  #: A SimPEG.Utils.Counter object
 
     def __init__(self, **kwargs):
         Utils.setKwargs(self, **kwargs)
@@ -236,39 +235,33 @@ class BaseSurvey(object):
     @property
     def srcList(self):
         """Source List"""
-        return getattr(self, '_srcList', None)
+        return getattr(self, "_srcList", None)
 
     @srcList.setter
     def srcList(self, value):
-        assert type(value) is list, 'srcList must be a list'
-        assert np.all([isinstance(src, self.srcPair) for src in value]), (
-            'All sources must be instances of {0!s}'.format(
-                self.srcPair.__name__
-            )
-        )
-        assert len(set(value)) == len(value), 'The srcList must be unique'
+        assert type(value) is list, "srcList must be a list"
+        assert np.all(
+            [isinstance(src, self.srcPair) for src in value]
+        ), f"All sources must be instances of {self.srcPair.__name__!s}"
+        assert len(set(value)) == len(value), "The srcList must be unique"
         self._srcList = value
         self._sourceOrder = dict()
         [
-            self._sourceOrder.setdefault(src.uid, ii) for ii, src in
-            enumerate(self._srcList)
+            self._sourceOrder.setdefault(src.uid, ii)
+            for ii, src in enumerate(self._srcList)
         ]
 
     def getSourceIndex(self, sources):
         if type(sources) is not list:
             sources = [sources]
         for src in sources:
-            if getattr(src, 'uid', None) is None:
-                raise KeyError(
-                    'Source does not have a uid: {0!s}'.format(str(src))
-                )
-        inds = list(map(
-            lambda src: self._sourceOrder.get(src.uid, None), sources
-        ))
+            if getattr(src, "uid", None) is None:
+                raise KeyError("Source does not have a uid: {!s}".format(str(src)))
+        inds = list(map(lambda src: self._sourceOrder.get(src.uid, None), sources))
         if None in inds:
             raise KeyError(
-                'Some of the sources specified are not in this survey. '
-                '{0!s}'.format(str(inds))
+                "Some of the sources specified are not in this survey. "
+                "{!s}".format(str(inds))
             )
         return inds
 
@@ -279,30 +272,25 @@ class BaseSurvey(object):
 
             survey.pair(prob)
         """
-        return getattr(self, '_prob', None)
+        return getattr(self, "_prob", None)
 
     @property
     def mesh(self):
         """Mesh of the paired problem."""
         if self.ispaired:
             return self.prob.mesh
-        raise Exception(
-            'Pair survey to a problem to access the problems mesh.'
-        )
+        raise Exception("Pair survey to a problem to access the problems mesh.")
 
     def pair(self, p):
         """Bind a problem to this survey instance using pointers"""
-        assert hasattr(p, 'surveyPair'), (
-            "Problem must have an attribute 'surveyPair'."
-        )
+        assert hasattr(p, "surveyPair"), "Problem must have an attribute 'surveyPair'."
         assert isinstance(self, p.surveyPair), (
-            "Problem requires survey object must be an instance of a {0!s} "
-            "class.".format((p.surveyPair.__name__))
+            "Problem requires survey object must be an instance of a {!s} "
+            "class.".format(p.surveyPair.__name__)
         )
         if p.ispaired:
             raise Exception(
-                "The problem object is already paired to a survey. "
-                "Use prob.unpair()"
+                "The problem object is already paired to a survey. " "Use prob.unpair()"
             )
         elif self.ispaired:
             raise Exception(
@@ -314,7 +302,8 @@ class BaseSurvey(object):
 
     def unpair(self):
         """Unbind a problem from this survey instance"""
-        if not self.ispaired: return
+        if not self.ispaired:
+            return
         self.prob._survey = None
         self._prob = None
 
@@ -338,7 +327,7 @@ class BaseSurvey(object):
         return len(self.srcList)
 
     @Utils.count
-    @Utils.requires('prob')
+    @Utils.requires("prob")
     def dpred(self, m=None, f=None):
         """dpred(m, f=None)
 
@@ -364,9 +353,9 @@ class BaseSurvey(object):
 
             .. math::
 
-                d_\\text{pred} = \mathbf{P} f(m)
+                d_\\text{pred} = \\mathbf{P} f(m)
         """
-        raise NotImplementedError('eval is not yet implemented.')
+        raise NotImplementedError("eval is not yet implemented.")
 
     @Utils.count
     def evalDeriv(self, f):
@@ -376,9 +365,9 @@ class BaseSurvey(object):
 
             .. math::
 
-                \\frac{\partial d_\\text{pred}}{\partial u} = \mathbf{P}
+                \\frac{\\partial d_\\text{pred}}{\\partial u} = \\mathbf{P}
         """
-        raise NotImplementedError('eval is not yet implemented.')
+        raise NotImplementedError("eval is not yet implemented.")
 
     @Utils.count
     def residual(self, m, f=None):
@@ -393,7 +382,7 @@ class BaseSurvey(object):
 
             .. math::
 
-                \mu_\\text{data} = \mathbf{d}_\\text{pred} - \mathbf{d}_\\text{obs}
+                \\mu_\\text{data} = \\mathbf{d}_\\text{pred} - \\mathbf{d}_\\text{obs}
 
         """
         return self.dpred(m, f=f) - self.dobs
@@ -413,16 +402,16 @@ class BaseSurvey(object):
             :param bool force: force overwriting of dobs
 
         """
-        if getattr(self, 'dobs', None) is not None and not force:
+        if getattr(self, "dobs", None) is not None and not force:
             raise Exception(
-                'Survey already has dobs. You can use force=True to override '
-                'this exception.'
+                "Survey already has dobs. You can use force=True to override "
+                "this exception."
             )
         self.mtrue = m
         self.dtrue = self.dpred(m, f=f)
-        noise = std*abs(self.dtrue)*np.random.randn(*self.dtrue.shape)
-        self.dobs = self.dtrue+noise
-        self.std = self.dobs*0 + std
+        noise = std * abs(self.dtrue) * np.random.randn(*self.dtrue.shape)
+        self.dobs = self.dtrue + noise
+        self.std = self.dobs * 0 + std
         return self.dobs
 
 

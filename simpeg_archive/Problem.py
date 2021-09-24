@@ -1,4 +1,3 @@
-from __future__ import print_function
 from discretize.base import BaseMesh
 from . import utils as Utils
 from . import Survey
@@ -40,17 +39,15 @@ class BaseProblem(Props.HasModel):
     def __init__(self, mesh, **kwargs):
 
         # raise exception if user tries to set "mapping"
-        if 'mapping' in kwargs:
+        if "mapping" in kwargs:
             raise Exception(
-                'Depreciated (in 0.4.0): use one of {}'.format(
-                    [p for p in self._props.keys() if 'Map' in p]
+                "Depreciated (in 0.4.0): use one of {}".format(
+                    [p for p in self._props.keys() if "Map" in p]
                 )
             )
 
-        super(BaseProblem, self).__init__(**kwargs)
-        assert isinstance(mesh, BaseMesh), (
-            "mesh must be a discretize object."
-        )
+        super().__init__(**kwargs)
+        assert isinstance(mesh, BaseMesh), "mesh must be a discretize object."
         self.mesh = mesh
 
     @property
@@ -59,16 +56,16 @@ class BaseProblem(Props.HasModel):
         v0.4.0. Please see the release notes for more details.
         """
         raise Exception(
-            'Depreciated (in 0.4.0): use one of {}'.format(
-                [p for p in self._props.keys() if 'Map' in p]
+            "Depreciated (in 0.4.0): use one of {}".format(
+                [p for p in self._props.keys() if "Map" in p]
             )
         )
 
     @mapping.setter
     def mapping(self, value):
         raise Exception(
-            'Depreciated (in 0.4.0): use one of {}'.format(
-                [p for p in self._props.keys() if 'Map' in p]
+            "Depreciated (in 0.4.0): use one of {}".format(
+                [p for p in self._props.keys() if "Map" in p]
             )
         )
 
@@ -80,30 +77,28 @@ class BaseProblem(Props.HasModel):
         Use `SimPEG.Problem.model` instead.
         """
         raise AttributeError(
-            'curModel is depreciated (in 0.4.0). Use '
-            '`SimPEG.Problem.model` instead'
-            )
+            "curModel is depreciated (in 0.4.0). Use " "`SimPEG.Problem.model` instead"
+        )
 
     @curModel.setter
     def curModel(self, value):
         raise AttributeError(
-            'curModel is depreciated (in 0.4.0). Use '
-            '`SimPEG.Problem.model` instead'
-            )
+            "curModel is depreciated (in 0.4.0). Use " "`SimPEG.Problem.model` instead"
+        )
 
     @property
     def survey(self):
         """
         The survey object for this problem.
         """
-        return getattr(self, '_survey', None)
+        return getattr(self, "_survey", None)
 
     def pair(self, d):
         """Bind a survey to this problem instance using pointers."""
-        assert isinstance(d, self.surveyPair), (
-            "Data object must be an instance of a {0!s} class.".format(
-                self.surveyPair.__name__
-            )
+        assert isinstance(
+            d, self.surveyPair
+        ), "Data object must be an instance of a {!s} class.".format(
+            self.surveyPair.__name__
         )
         if d.ispaired:
             raise Exception(
@@ -126,14 +121,14 @@ class BaseProblem(Props.HasModel):
     #: List of matrix names to have their factors cleared on a model update
     clean_on_model_update = []
 
-    @properties.observer('model')
+    @properties.observer("model")
     def _on_model_update(self, change):
-        if change['previous'] is change['value']:
+        if change["previous"] is change["value"]:
             return
         if (
-            isinstance(change['previous'], np.ndarray) and
-            isinstance(change['value'], np.ndarray) and
-            np.allclose(change['previous'], change['value'])
+            isinstance(change["previous"], np.ndarray)
+            and isinstance(change["value"], np.ndarray)
+            and np.allclose(change["previous"], change["value"])
         ):
             return
 
@@ -146,7 +141,6 @@ class BaseProblem(Props.HasModel):
             if getattr(self, mat, None) is not None:
                 getattr(self, mat).clean()  # clean factors
                 setattr(self, mat, None)  # set to none
-
 
     @property
     def ispaired(self):
@@ -165,7 +159,7 @@ class BaseProblem(Props.HasModel):
         :rtype: numpy.array
         :return: Jv
         """
-        raise NotImplementedError('J is not yet implemented.')
+        raise NotImplementedError("J is not yet implemented.")
 
     @Utils.timeIt
     def Jtvec(self, m, v, f=None):
@@ -179,7 +173,7 @@ class BaseProblem(Props.HasModel):
         :rtype: numpy.array
         :return: JTv
         """
-        raise NotImplementedError('Jt is not yet implemented.')
+        raise NotImplementedError("Jt is not yet implemented.")
 
     @Utils.timeIt
     def Jvec_approx(self, m, v, f=None):
@@ -216,7 +210,7 @@ class BaseProblem(Props.HasModel):
         :rtype: numpy.array
         :return: u, the fields
         """
-        raise NotImplementedError('fields is not yet implemented.')
+        raise NotImplementedError("fields is not yet implemented.")
 
 
 class BaseTimeProblem(BaseProblem):
@@ -235,7 +229,7 @@ class BaseTimeProblem(BaseProblem):
             prob.timeSteps = np.r_[1e-6,1e-6,1e-6,1e-5,1e-4,1e-4]
 
         """
-        return getattr(self, '_timeSteps', None)
+        return getattr(self, "_timeSteps", None)
 
     @timeSteps.setter
     def timeSteps(self, value):
@@ -254,11 +248,11 @@ class BaseTimeProblem(BaseProblem):
 
     @property
     def t0(self):
-        return getattr(self, '_t0', 0.0)
+        return getattr(self, "_t0", 0.0)
 
     @t0.setter
     def t0(self, value):
-        assert np.isscalar(value), 't0 must be a scalar'
+        assert np.isscalar(value), "t0 must be a scalar"
         del self.timeMesh
         self._t0 = float(value)
 
@@ -269,13 +263,13 @@ class BaseTimeProblem(BaseProblem):
 
     @property
     def timeMesh(self):
-        if getattr(self, '_timeMesh', None) is None:
+        if getattr(self, "_timeMesh", None) is None:
             self._timeMesh = Mesh.TensorMesh([self.timeSteps], x0=[self.t0])
         return self._timeMesh
 
     @timeMesh.deleter
     def timeMesh(self):
-        if hasattr(self, '_timeMesh'):
+        if hasattr(self, "_timeMesh"):
             del self._timeMesh
 
 
@@ -290,13 +284,12 @@ class LinearProblem(BaseProblem):
 
     def __init__(self, mesh, **kwargs):
         BaseProblem.__init__(self, mesh, **kwargs)
-        self.modelMap = kwargs.pop('mapping', Maps.IdentityMap(mesh))
+        self.modelMap = kwargs.pop("mapping", Maps.IdentityMap(mesh))
 
     @property
     def modelMap(self):
         "A SimPEG.Map instance."
-        return getattr(self, '_modelMap', None)
-
+        return getattr(self, "_modelMap", None)
 
     @modelMap.setter
     def modelMap(self, val):
@@ -313,7 +306,7 @@ class LinearProblem(BaseProblem):
 
         if self.modelMap is not None:
             dmudm = self.modelMap.deriv(m)
-            return self.G*dmudm
+            return self.G * dmudm
         else:
             return self.G
 
@@ -321,4 +314,4 @@ class LinearProblem(BaseProblem):
         return self.G.dot(self.modelMap.deriv(m) * v)
 
     def Jtvec(self, m, v, f=None):
-        return self.modelMap.deriv(m).T*self.G.T.dot(v)
+        return self.modelMap.deriv(m).T * self.G.T.dot(v)
