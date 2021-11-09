@@ -30,7 +30,7 @@ with open("README.rst") as f:
 
 setup(
     name="simpeg_archive",
-    version="0.9.1 archive",
+    version="0.9.1.dev1+geoapps.0.6.0",
     packages=find_packages(),
     install_requires=[
         'numpy>=1.7',
