@@ -1,0 +1,62 @@
+#SimPEG: Simulation and Parameter Estimation in Geophysics
+#
+#SimPEG is a python package for simulation and gradient based
+#parameter estimation in the context of geophysical applications.
+
+[tool.poetry]
+name = "simpeg_archive"
+version = "0.9.1.dev1+geoapps.0.6.0"
+license = "MIT"
+description = "SimPEG: Simulation and Parameter Estimation in Geophysics"
+
+authors = ["Rowan Cockett <rowanc1@gmail.com>"]
+repository = "http://github.com/simpeg/simpeg"
+documentation = "https://docs.simpeg.xyz/"
+homepage = "http://simpeg.xyz/"
+readme = "README.rst"
+keywords = ["geophysics inverse problem"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
+    "Natural Language :: English",
+]
+
+exclude = ["tests*", "examples*", "tutorials*"]
+
+[tool.poetry.dependencies]
+numpy = ">=1.7"
+scipy = ">=0.13"
+cython = "*"
+pymatsolver = ">=0.1.1"
+ipython = "*"
+matplotlib = "*"
+properties = {version = ">= 0.3.1b2", extras = ["math"]}
+discretize = "*"
+
+[tool.poetry.dev-dependencies]
+sphinx = "1.5.6"
+sphinx_rtd_theme = "*"
+sphinx-gallery = "*"
+nose = "*"
+nose-cov = "*"
+pillow = "*"
+pylint = "*"
+sympy = "*"
+pytest = "*"
+
+[tool.conda-lock]
+platforms = ['win-64', 'osx-64', 'linux-64']
+channels = ['conda-forge', 'main']
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "setuptools"]
+build-backend = "poetry.core.masonry.api"
