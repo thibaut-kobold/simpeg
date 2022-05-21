@@ -38,7 +38,7 @@ scipy = ">=0.13"
 cython = "*"
 pymatsolver = ">=0.1.1"
 ipython = "*"
-matplotlib = {version = "*", optional = true}
+#matplotlib = "*"
 properties = {version = ">= 0.3.1b2", extras = ["math"]}
 discretize = "*"
 
@@ -54,7 +54,6 @@ sympy = "*"
 pytest = "*"
 
 [tool.poetry.extras]
-matplotlib = ["matplotlib"]
 
 [tool.conda-lock]
 platforms = ['win-64', 'osx-64', 'linux-64']
