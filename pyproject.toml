@@ -36,7 +36,6 @@ exclude = ["tests*", "examples*", "tutorials*"]
 numpy = ">=1.7"
 scipy = ">=0.13"
 pymatsolver = ">=0.1.1"
-ipython = "*"
 #matplotlib = "*"
 properties = {version = ">= 0.3.1b2", extras = ["math"]}
 discretize = "*"
