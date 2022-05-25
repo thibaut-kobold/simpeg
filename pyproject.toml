@@ -55,7 +55,7 @@ pytest = "*"
 
 [tool.conda-lock]
 platforms = ['win-64', 'osx-64', 'linux-64']
-channels = ['conda-forge', 'main']
+channels = ['conda-forge', 'defaults']
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "setuptools"]
