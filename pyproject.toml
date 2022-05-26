@@ -33,12 +33,17 @@ classifiers = [
 exclude = ["tests*", "examples*", "tutorials*"]
 
 [tool.poetry.dependencies]
-#matplotlib = "*"
 discretize = "*"
 numpy = ">=1.7"
 properties = {version = ">= 0.3.1b2", extras = ["math"]}
 pymatsolver = ">=0.1.1"
 scipy = ">=0.13"
+
+# use "regular" in extras to get required matplotlib.
+# It is not actually optional, but it needs to be excluded for building geoapps
+# as matplotlib resolves to a different package name through Conda and through pip.
+# geoapps takes care of placing explicitly matplotlib in its requirements.
+matplotlib = { version = "*", optional = true }
 
 [tool.poetry.dev-dependencies]
 nose = "*"
@@ -52,6 +57,7 @@ sphinx_rtd_theme = "*"
 sympy = "*"
 
 [tool.poetry.extras]
+regular = ["matplotlib"]
 
 [tool.conda-lock]
 platforms = ['win-64', 'osx-64', 'linux-64']
