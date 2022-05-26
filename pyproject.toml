@@ -33,23 +33,23 @@ classifiers = [
 exclude = ["tests*", "examples*", "tutorials*"]
 
 [tool.poetry.dependencies]
-numpy = ">=1.7"
-scipy = ">=0.13"
-pymatsolver = ">=0.1.1"
 #matplotlib = "*"
-properties = {version = ">= 0.3.1b2", extras = ["math"]}
 discretize = "*"
+numpy = ">=1.7"
+properties = {version = ">= 0.3.1b2", extras = ["math"]}
+pymatsolver = ">=0.1.1"
+scipy = ">=0.13"
 
 [tool.poetry.dev-dependencies]
-sphinx = "1.5.6"
-sphinx_rtd_theme = "*"
-sphinx-gallery = "*"
 nose = "*"
 nose-cov = "*"
 pillow = "*"
 pylint = "*"
-sympy = "*"
 pytest = "*"
+sphinx = "1.5.6"
+sphinx-gallery = "*"
+sphinx_rtd_theme = "*"
+sympy = "*"
 
 [tool.poetry.extras]
 
