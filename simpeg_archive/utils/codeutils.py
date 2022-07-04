@@ -192,7 +192,7 @@ def requires(var):
         If a problem is not bound an Exception will be raised, and an nice error message printed.
     """
     def requiresVar(f):
-        if var is 'prob':
+        if var == 'prob':
             extra = """
 
         .. note::
