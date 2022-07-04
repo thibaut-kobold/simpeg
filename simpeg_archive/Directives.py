@@ -871,10 +871,8 @@ class SaveIterationsGeoH5(InversionDirective):
                     json.dumps(iterDict), author=f"Iteration_{0}"
                 )
 
-
     def endIter(self):
-        with self.h5_object.workspace:
-            self.h5_object.workspace.open()
+        with self.h5_object.workspace.open():
             if self.attribute == "predicted":
                 if getattr(self.dmisfit, "objfcts", None) is not None:
                     dpred = []
