@@ -128,7 +128,7 @@ def tileSurveyPoints(locs, nRefine, minimize=True, method='cluster'):
 
     """
 
-    if method is 'cluster':
+    if method == 'cluster':
         # Best for smaller problems
         from sklearn.cluster import AgglomerativeClustering
 
