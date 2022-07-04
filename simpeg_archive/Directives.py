@@ -798,8 +798,7 @@ class SaveIterationsGeoH5(InversionDirective):
     reg_fun = ["phi_ms", "phi_msx", "phi_msy", "phi_msz"]
 
     def initialize(self):
-        with self.h5_object.workspace:
-            self.h5_object.workspace.open()
+        with self.h5_object.workspace.open():
             if self.attribute == "predicted":
                 if getattr(self.dmisfit, "objfcts", None) is not None:
                     dpred = []
