@@ -909,14 +909,21 @@ class CircularLoop(MagDipole):
 
     current = properties.Float("current in the loop", default=1.0)
 
-    N = properties.Float("number of turns in the loop", default=1.0)
+    n_turns = properties.Integer("number of turns in the loop", default=1)
 
     def __init__(self, receiver_list=None, **kwargs):
+        N = kwargs.pop("N", None)
+        if N is not None:
+            warnings.warn(
+                "'N' is a deprecated property. Please use 'n_turns' instead."
+                "'N' be removed in SimPEG 0.18.0."
+            )
+            self.n_turns = N
         super(CircularLoop, self).__init__(receiver_list, **kwargs)
 
     @property
     def moment(self):
-        return np.pi * self.radius**2 * self.current * self.N
+        return np.pi * self.radius**2 * self.current * self.n_turns
 
     def _srcFct(self, obsLoc, coordinates="cartesian"):
         # return MagneticLoopVectorPotential(
@@ -931,7 +938,7 @@ class CircularLoop(MagDipole):
                 radius=self.radius,
                 current=self.current,
             )
-        return self._loop.vector_potential(obsLoc, coordinates)
+        return self.n_turns * self._loop.vector_potential(obsLoc, coordinates)
 
 
 class LineCurrent(BaseTDEMSrc):
