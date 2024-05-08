@@ -103,9 +103,9 @@ def getCylinderPoints(xc, zc, r):
     xLocOrig1 = np.arange(-r, r + r / 10.0, r / 10.0)
     xLocOrig2 = np.arange(r, -r - r / 10.0, -r / 10.0)
     # Top half of cylinder
-    zLoc1 = np.sqrt(-(xLocOrig1**2.0) + r**2.0) + zc
+    zLoc1 = np.sqrt(-(xLocOrig1 ** 2.0) + r ** 2.0) + zc
     # Bottom half of cylinder
-    zLoc2 = -np.sqrt(-(xLocOrig2**2.0) + r**2.0) + zc
+    zLoc2 = -np.sqrt(-(xLocOrig2 ** 2.0) + r ** 2.0) + zc
     # Shift from x = 0 to xc
     xLoc1 = xLocOrig1 + xc * np.ones_like(xLocOrig1)
     xLoc2 = xLocOrig2 + xc * np.ones_like(xLocOrig2)
@@ -155,16 +155,16 @@ problem = DC.Simulation3DCellCentered(
 
 data = problem.make_synthetic_data(mtrue[actind], relative_error=0.05, add_noise=True)
 
-# Tikhonov Inversion
-####################
+# Least Squares Inversion
+#########################
 
 # Initial Model
 m0 = np.median(ln_sigback) * np.ones(mapping.nP)
 # Data Misfit
 dmis = data_misfit.L2DataMisfit(simulation=problem, data=data)
 # Regularization
-regT = regularization.Simple(
-    mesh, indActive=actind, alpha_s=1e-6, alpha_x=1.0, alpha_y=1.0, alpha_z=1.0
+regT = regularization.WeightedLeastSquares(
+    mesh, active_cells=actind, alpha_s=1e-6, alpha_x=1.0, alpha_y=1.0, alpha_z=1.0
 )
 
 # Optimization Scheme

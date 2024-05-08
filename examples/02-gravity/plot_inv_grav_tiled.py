@@ -48,7 +48,7 @@ yr = np.linspace(-30.0, 30.0, 20)
 X, Y = np.meshgrid(xr, yr)
 
 # Move the observation points 5m above the topo
-Z = -np.exp((X**2 + Y**2) / 75**2)
+Z = -np.exp((X ** 2 + Y ** 2) / 75 ** 2)
 
 # Create a topo array
 topo = np.c_[utils.mkvc(X.T), utils.mkvc(Y.T), utils.mkvc(Z.T)]
@@ -231,7 +231,7 @@ plt.show()
 idenMap = maps.IdentityMap(nP=nC)
 
 # Create a regularization
-reg = regularization.Sparse(mesh, indActive=activeCells, mapping=idenMap)
+reg = regularization.Sparse(mesh, active_cells=activeCells, mapping=idenMap)
 
 m0 = np.ones(nC) * 1e-4  # Starting model
 

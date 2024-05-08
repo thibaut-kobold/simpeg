@@ -1,7 +1,8 @@
 from __future__ import division, print_function
 import unittest
 import discretize
-import properties
+
+# import properties
 
 from SimPEG import maps
 from SimPEG.electromagnetics import time_domain as tdem
@@ -18,7 +19,9 @@ FLR = 1e-20
 np.random.seed(25)
 
 
-def setUp_TDEM(prbtype="MagneticFluxDensity", rxcomp="bz", waveform="stepoff"):
+def setUp_TDEM(
+    prbtype="MagneticFluxDensity", rxcomp="bz", waveform="stepoff", src_type=None
+):
     cs = 5.0
     ncx = 8
     ncy = 8
@@ -35,8 +38,10 @@ def setUp_TDEM(prbtype="MagneticFluxDensity", rxcomp="bz", waveform="stepoff"):
         "CCC",
     )
 
-    active = mesh.vectorCCz < 0.0
-    activeMap = maps.InjectActiveCells(mesh, active, np.log(1e-8), nC=mesh.nCz)
+    active = mesh.cell_centers_z < 0.0
+    activeMap = maps.InjectActiveCells(
+        mesh, active, np.log(1e-8), nC=mesh.shape_cells[2]
+    )
     mapping = maps.ExpMap(mesh) * maps.SurjectVertical1D(mesh) * activeMap
 
     rxtimes = np.logspace(-4, -3, 20)
@@ -57,9 +62,17 @@ def setUp_TDEM(prbtype="MagneticFluxDensity", rxcomp="bz", waveform="stepoff"):
     rx = getattr(tdem.Rx, "Point{}".format(rxcomp[:-1]))(
         np.r_[rxOffset, 0.0, -1e-2], rxtimes, rxcomp[-1]
     )
-    src = tdem.Src.MagDipole(
-        [rx], location=np.array([0.0, 0.0, 0.0]), waveform=waveform
-    )
+    if src_type == "LineCurrent":
+        src = tdem.sources.LineCurrent(
+            [rx],
+            location=np.vstack(
+                [np.r_[-cs / 2, -cs / 2, -cs / 2], np.r_[cs / 2, -cs / 2, -cs / 2]]
+            ),
+        )
+    else:
+        src = tdem.Src.MagDipole(
+            [rx], location=np.array([0.0, 0.0, 0.0]), waveform=waveform
+        )
 
     survey = tdem.Survey([src])
 
@@ -78,10 +91,11 @@ def CrossCheck(
     prbtype2="ElectricField",
     rxcomp="bz",
     waveform="stepoff",
+    src_type=None,
 ):
 
-    prb1, m1, mesh1 = setUp_TDEM(prbtype1, rxcomp, waveform)
-    prb2, _, mesh2 = setUp_TDEM(prbtype2, rxcomp, waveform)
+    prb1, m1, mesh1 = setUp_TDEM(prbtype1, rxcomp, waveform, src_type)
+    prb2, _, mesh2 = setUp_TDEM(prbtype2, rxcomp, waveform, src_type)
 
     d1 = prb1.dpred(m1)
     d2 = prb2.dpred(m1)
@@ -91,8 +105,8 @@ def CrossCheck(
     passed = check < tol
 
     print(
-        "Checking {}, {} for {} data, {} waveform".format(
-            prbtype1, prbtype2, rxcomp, waveform
+        "Checking {}, {} for {} data, {} waveform, {}".format(
+            prbtype1, prbtype2, rxcomp, waveform, src_type
         )
     )
     print(
@@ -161,6 +175,24 @@ class TDEM_cross_check_EB(unittest.TestCase):
             waveform="stepoff",
         )
 
+    def test_HJ_jx_stepoff_linecurrent(self):
+        CrossCheck(
+            prbtype1="MagneticField",
+            prbtype2="CurrentDensity",
+            rxcomp="CurrentDensityx",
+            waveform="stepoff",
+            src_type="LineCurrent",
+        )
+
+    def test_HJ_jy_stepoff_linecurrent(self):
+        CrossCheck(
+            prbtype1="MagneticField",
+            prbtype2="CurrentDensity",
+            rxcomp="CurrentDensityy",
+            waveform="stepoff",
+            src_type="LineCurrent",
+        )
+
     def test_EB_ey_vtem(self):
         CrossCheck(
             prbtype1="MagneticFluxDensity",
@@ -220,7 +252,7 @@ class TDEM_cross_check_EB(unittest.TestCase):
     def test_MagDipoleSimpleFail(self):
         print("\ntesting MagDipole error handling")
 
-        with self.assertRaises(properties.ValidationError):
+        with self.assertRaises(TypeError):
             tdem.Src.MagDipole(
                 ["a", 0, {"s": 1}],
                 location=np.r_[0.0, 0.0, 0.0],
@@ -251,9 +283,5 @@ class TDEM_cross_check_EB(unittest.TestCase):
 
         self.assertIsInstance(src_loop.waveform, tdem.sources.QuarterSineRampOnWaveform)
 
-        with self.assertRaises(properties.ValidationError):
+        with self.assertRaises(TypeError):
             src_loop.waveform = (1, 5)
-
-
-if __name__ == "__main__":
-    unittest.main()

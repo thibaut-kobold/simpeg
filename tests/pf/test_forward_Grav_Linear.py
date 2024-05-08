@@ -25,10 +25,10 @@ class GravFwdProblemTests(unittest.TestCase):
         mesh = discretize.TensorMesh([hxind, hyind, hzind], "CCC")
 
         # Get cells inside the sphere
-        sph_ind = getIndicesSphere([0.0, 0.0, 0.0], self.rad, mesh.gridCC)
+        sph_ind = getIndicesSphere([0.0, 0.0, 0.0], self.rad, mesh.cell_centers)
 
         # Adjust density for volume difference
-        Vratio = (4.0 / 3.0 * np.pi * self.rad**3.0) / (np.sum(sph_ind) * cs**3.0)
+        Vratio = (4.0 / 3.0 * np.pi * self.rad ** 3.0) / (np.sum(sph_ind) * cs ** 3.0)
         model = np.ones(mesh.nC) * self.rho * Vratio
         self.model = model[sph_ind]
 
@@ -112,10 +112,10 @@ class GravityGradientFwdProblemTests(unittest.TestCase):
         mesh = discretize.TensorMesh([hxind, hyind, hzind], "CCC")
 
         # Get cells inside the sphere
-        sph_ind = getIndicesSphere([0.0, 0.0, 0.0], self.rad, mesh.gridCC)
+        sph_ind = getIndicesSphere([0.0, 0.0, 0.0], self.rad, mesh.cell_centers)
 
         # Adjust density for volume difference
-        Vratio = (4.0 / 3.0 * np.pi * self.rad**3.0) / (np.sum(sph_ind) * cs**3.0)
+        Vratio = (4.0 / 3.0 * np.pi * self.rad ** 3.0) / (np.sum(sph_ind) * cs ** 3.0)
         model = np.ones(mesh.nC) * self.rho * Vratio
         self.model = model[sph_ind]
 

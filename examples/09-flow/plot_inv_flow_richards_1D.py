@@ -98,7 +98,7 @@ def run(plotIt=True):
     )
 
     # Setup a pretty standard inversion
-    reg = regularization.Tikhonov(M, alpha_s=1e-1)
+    reg = regularization.WeightedLeastSquares(M, alpha_s=1e-1)
     dmis = data_misfit.L2DataMisfit(simulation=prob, data=data)
     opt = optimization.InexactGaussNewton(maxIter=20, maxIterCG=10)
     invProb = inverse_problem.BaseInvProblem(dmis, reg, opt)
@@ -119,7 +119,7 @@ def run(plotIt=True):
         plt.semilogx(np.exp(np.c_[mopt, mtrue]), M.gridCC)
         plt.xlabel("Saturated Hydraulic Conductivity, $K_s$")
         plt.ylabel("Depth, cm")
-        plt.semilogx([10**-3.9] * len(locs), locs, "ro")
+        plt.semilogx([10 ** -3.9] * len(locs), locs, "ro")
         plt.legend(("$m_{rec}$", "$m_{true}$", "Data locations"), loc=4)
 
         ax = plt.subplot(222)

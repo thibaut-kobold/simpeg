@@ -29,11 +29,9 @@ class MagInvLinProblemTest(unittest.TestCase):
 
         # Create a mesh
         dx = 5.0
-
         hxind = [(dx, 5, -1.3), (dx, 5), (dx, 5, 1.3)]
         hyind = [(dx, 5, -1.3), (dx, 5), (dx, 5, 1.3)]
         hzind = [(dx, 5, -1.3), (dx, 6)]
-
         self.mesh = discretize.TensorMesh([hxind, hyind, hzind], "CCC")
 
         # Get index of the center
@@ -42,16 +40,15 @@ class MagInvLinProblemTest(unittest.TestCase):
 
         # Lets create a simple Gaussian topo and set the active cells
         [xx, yy] = np.meshgrid(self.mesh.vectorNx, self.mesh.vectorNy)
-        zz = -np.exp((xx**2 + yy**2) / 75**2) + self.mesh.vectorNz[-1]
+        zz = -np.exp((xx ** 2 + yy ** 2) / 75 ** 2) + self.mesh.vectorNz[-1]
 
         # Go from topo to actv cells
         topo = np.c_[utils.mkvc(xx), utils.mkvc(yy), utils.mkvc(zz)]
         actv = utils.surface2ind_topo(self.mesh, topo, "N")
-        actv = np.where(actv)[0]
 
         # Create active map to go from reduce space to full
         self.actvMap = maps.InjectActiveCells(self.mesh, actv, -100)
-        nC = len(actv)
+        nC = int(actv.sum())
 
         # Create and array of observation points
         xr = np.linspace(-20.0, 20.0, 20)
@@ -59,7 +56,7 @@ class MagInvLinProblemTest(unittest.TestCase):
         X, Y = np.meshgrid(xr, yr)
 
         # Move the observation points 5m above the topo
-        Z = -np.exp((X**2 + Y**2) / 75**2) + self.mesh.vectorNz[-1] + 5.0
+        Z = -np.exp((X ** 2 + Y ** 2) / 75 ** 2) + self.mesh.vectorNz[-1] + 5.0
 
         # Create a MAGsurvey
         rxLoc = np.c_[utils.mkvc(X.T), utils.mkvc(Y.T), utils.mkvc(Z.T)]
@@ -97,13 +94,11 @@ class MagInvLinProblemTest(unittest.TestCase):
 
         # Create a regularization
         reg = regularization.Sparse(self.mesh, indActive=actv, mapping=idenMap)
-        reg.norms = np.c_[0, 0, 0, 0]
-        reg.gradientType = "component"
-        # reg.eps_p, reg.eps_q = 1e-3, 1e-3
+        reg.norms = [0, 0, 0, 0]
+        reg.gradientType = "components"
 
         # Data misfit function
         dmis = data_misfit.L2DataMisfit(simulation=sim, data=data)
-        # dmis.W = 1/wd
 
         # Add directives to the inversion
         opt = optimization.ProjectedGNCG(
@@ -125,9 +120,7 @@ class MagInvLinProblemTest(unittest.TestCase):
 
         # Run the inversion
         mrec = self.inv.run(self.model)
-
         residual = np.linalg.norm(mrec - self.model) / np.linalg.norm(self.model)
-        print(residual)
 
         # plt.figure()
         # ax = plt.subplot(1, 2, 1)
@@ -142,7 +135,6 @@ class MagInvLinProblemTest(unittest.TestCase):
         # plt.show()
 
         self.assertTrue(residual < 0.05)
-        # self.assertTrue(residual < 0.05)
 
     def tearDown(self):
         # Clean up the working directory

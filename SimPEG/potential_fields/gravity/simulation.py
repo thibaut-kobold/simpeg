@@ -1,8 +1,9 @@
-from SimPEG.utils import mkvc, sdiag
+from SimPEG.utils import mkvc, sdiag, setKwargs
 from SimPEG import props
 from ...simulation import BaseSimulation
 from ...base import BasePDESimulation
-from ..base import BasePFSimulation
+from ..base import BasePFSimulation, BaseEquivalentSourceLayerSimulation
+from .survey import Survey
 import scipy.constants as constants
 from scipy.constants import G as NewtG
 import numpy as np
@@ -213,9 +214,9 @@ class Simulation3DIntegral(BasePFSimulation):
                                 + dxdz / (r * dy_r)
                                 - np.arctan(arg)
                                 + dx[:, aa]
-                                * (1.0 / (1 + arg**2.0))
+                                * (1.0 / (1 + arg ** 2.0))
                                 * dydz
-                                / dxr**2.0
+                                / dxr ** 2.0
                                 * (r + dx[:, aa] ** 2.0 / r)
                             )
                         )
@@ -230,8 +231,8 @@ class Simulation3DIntegral(BasePFSimulation):
                                 + dy[:, bb] ** 2.0 / (r * dz_r)
                                 + dz[:, cc] / r
                                 - 1.0
-                                / (1 + arg**2.0)
-                                * (dz[:, cc] / r**2)
+                                / (1 + arg ** 2.0)
+                                * (dz[:, cc] / r ** 2)
                                 * (r - dy[:, bb] ** 2.0 / r)
                             )
                         )
@@ -246,8 +247,8 @@ class Simulation3DIntegral(BasePFSimulation):
                                 + dz[:, cc] ** 2.0 / (r * dy_r)
                                 + dy[:, bb] / r
                                 - 1.0
-                                / (1 + arg**2.0)
-                                * (dy[:, bb] / (r**2))
+                                / (1 + arg ** 2.0)
+                                * (dy[:, bb] / (r ** 2))
                                 * (r - dz[:, cc] ** 2.0 / r)
                             )
                         )
@@ -268,9 +269,9 @@ class Simulation3DIntegral(BasePFSimulation):
                                 + dydz / (r * dx_r)
                                 - np.arctan(arg)
                                 + dy[:, bb]
-                                * (1.0 / (1 + arg**2.0))
+                                * (1.0 / (1 + arg ** 2.0))
                                 * dxdz
-                                / dyr**2.0
+                                / dyr ** 2.0
                                 * (r + dy[:, bb] ** 2.0 / r)
                             )
                         )
@@ -285,8 +286,8 @@ class Simulation3DIntegral(BasePFSimulation):
                                 + dz[:, cc] ** 2.0 / (r * (dx_r))
                                 + dx[:, aa] / r
                                 - 1.0
-                                / (1 + arg**2.0)
-                                * (dx[:, aa] / (r**2))
+                                / (1 + arg ** 2.0)
+                                * (dx[:, aa] / (r ** 2))
                                 * (r - dz[:, cc] ** 2.0 / r)
                             )
                         )
@@ -312,9 +313,42 @@ class Simulation3DIntegral(BasePFSimulation):
         return np.vstack([rows[component] for component in components])
 
 
-class Simulation3DDifferential(BasePDESimulation):
+class SimulationEquivalentSourceLayer(
+    BaseEquivalentSourceLayerSimulation, Simulation3DIntegral
+):
     """
-    Gravity in differential equations!
+    Equivalent source layer simulations
+
+    Parameters
+    ----------
+    mesh : discretize.BaseMesh
+        A 2D tensor or tree mesh defining discretization along the x and y directions
+    cell_z_top : numpy.ndarray or float
+        Define the elevations for the top face of all cells in the layer
+    cell_z_bottom : numpy.ndarray or float
+        Define the elevations for the bottom face of all cells in the layer
+    """
+
+
+class Simulation3DDifferential(BasePDESimulation):
+    r"""Finite volume simulation class for gravity.
+
+    Notes
+    -----
+    From Blakely (1996), the scalar potential :math:`\phi` outside the source region
+    is obtained by solving a Poisson's equation:
+
+    .. math::
+        \nabla^2 \phi = 4 \pi \gamma \rho
+
+    where :math:`\gamma` is the gravitational constant and :math:`\rho` defines the
+    distribution of density within the source region.
+
+    Applying the finite volumn method, we can solve the Poisson's equation on a
+    3D voxel grid according to:
+
+    .. math::
+        \big [ \mathbf{D M_f D^T} \big ] \mathbf{u} = - \mathbf{M_c \, \rho}
     """
 
     _deprecate_main_map = "rhoMap"
@@ -329,20 +363,20 @@ class Simulation3DDifferential(BasePDESimulation):
         self._Div = self.mesh.face_divergence
 
     def getRHS(self):
-        """"""
+        """Return right-hand side for the linear system"""
         Mc = self.Mcc
         rho = self.rho
         return -Mc * rho
 
     def getA(self):
-        """
+        r"""
         GetA creates and returns the A matrix for the Gravity nodal problem
 
         The A matrix has the form:
 
         .. math ::
 
-            \mathbf{A} =  \Div(\MfMui)^{-1}\Div^{T}
+            \mathbf{A} =  \Div(\Mf Mui)^{-1}\Div^{T}
         """
         # Constructs A with 0 dirichlet
         if getattr(self, "_A", None) is None:
@@ -350,17 +384,19 @@ class Simulation3DDifferential(BasePDESimulation):
         return self._A
 
     def fields(self, m=None):
-        """
-        Return magnetic potential (u) and flux (B)
-        u: defined on the cell nodes [nC x 1]
-        gField: defined on the cell faces [nF x 1]
+        r"""Compute fields
 
-        After we compute u, then we update B.
+        **INCOMPLETE**
 
-        .. math ::
+        Parameters
+        ----------
+        m: (nP) np.ndarray
+            The model
 
-            \mathbf{B}_s = (\MfMui)^{-1}\mathbf{M}^f_{\mu_0^{-1}}\mathbf{B}_0-\mathbf{B}_0 -(\MfMui)^{-1}\Div^T \mathbf{u}
-
+        Returns
+        -------
+        dict
+            The fields
         """
         if m is not None:
             self.model = m

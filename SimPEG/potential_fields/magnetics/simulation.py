@@ -3,7 +3,7 @@ import scipy.sparse as sp
 from scipy.constants import mu_0
 
 from SimPEG import utils
-from ..base import BasePFSimulation
+from ..base import BasePFSimulation, BaseEquivalentSourceLayerSimulation
 from ...base import BaseMagneticPDESimulation
 from .survey import Survey
 from .analytics import CongruousMagBC
@@ -12,6 +12,7 @@ from SimPEG import Solver
 from SimPEG import props
 import properties
 from SimPEG.utils import mkvc, mat_utils, sdiag, setKwargs
+from SimPEG.utils.code_utils import validate_string, deprecate_property
 
 
 class Simulation3DIntegral(BasePFSimulation):
@@ -24,19 +25,60 @@ class Simulation3DIntegral(BasePFSimulation):
         "Magnetic Susceptibility (SI)", default=1.0
     )
 
-    is_amplitude_data = properties.Boolean(
-        "Whether the supplied data is amplitude data", default=False
-    )
+    def __init__(self, mesh, model_type="scalar", is_amplitude_data=False, **kwargs):
 
-    _model_type: str = "scalar"
-
-    def __init__(self, mesh, **kwargs):
+        self.model_type = model_type
         super().__init__(mesh, **kwargs)
+
         self._G = None
         self._M = None
         self._gtg_diagonal = None
+        self.is_amplitude_data = is_amplitude_data
         self.modelMap = self.chiMap
-        setKwargs(self, **kwargs)
+
+    @property
+    def model_type(self):
+        """Type of magnetization model
+
+        Returns
+        -------
+        str
+            A string defining the model type for the simulation.
+            One of {'scalar', 'vector'}.
+        """
+        return self._model_type
+
+    @model_type.setter
+    def model_type(self, value):
+        self._model_type = validate_string("model_type", value, ["scalar", "vector"])
+
+    @property
+    def modelType(self):
+        warnings.warn(
+            "The 'modelType' property has been deprecated. "
+            "Please use 'model_type'. This will be removed in version 0.17.0 of SimPEG.",
+            FutureWarning,
+        )
+        return self.model_type
+
+    @modelType.setter
+    def modelType(self, value):
+        warnings.warn(
+            "The 'modelType' property has been deprecated. "
+            "Please use 'model_type'. This will be removed in version 0.17.0 of SimPEG.",
+            FutureWarning,
+        )
+        self.model_type = value
+
+    @property
+    def is_amplitude_data(self):
+        return self._is_amplitude_data
+
+    @is_amplitude_data.setter
+    def is_amplitude_data(self, value):
+        if not isinstance(value, bool):
+            raise ValueError("is_amplitude_data must be a bool")
+        self._is_amplitude_data = value
 
     @property
     def M(self):
@@ -124,6 +166,10 @@ class Simulation3DIntegral(BasePFSimulation):
             )
 
         self._model_type = value
+
+    modelType = deprecate_property(
+        model_type, "modelType", "model_type", removal_version="0.18.0"
+    )
 
     @property
     def nD(self):
@@ -289,14 +335,14 @@ class Simulation3DIntegral(BasePFSimulation):
         dz2[np.abs(dz2) / min_hz < tolerance] = tolerance * min_hz
 
         # comp. squared diff
-        dx2dx2 = dx2**2.0
-        dx1dx1 = dx1**2.0
+        dx2dx2 = dx2 ** 2.0
+        dx1dx1 = dx1 ** 2.0
 
-        dy2dy2 = dy2**2.0
-        dy1dy1 = dy1**2.0
+        dy2dy2 = dy2 ** 2.0
+        dy1dy1 = dy1 ** 2.0
 
-        dz2dz2 = dz2**2.0
-        dz1dz1 = dz1**2.0
+        dz2dz2 = dz2 ** 2.0
+        dz1dz1 = dz1 ** 2.0
 
         # 2D radius component squared of corner nodes
         R1 = dy2dy2 + dx2dx2
@@ -375,14 +421,14 @@ class Simulation3DIntegral(BasePFSimulation):
             rows["bxx"] = np.zeros((1, 3 * nC))
 
             rows["bxx"][0, 0:nC] = 2 * (
-                ((dx1**2 - r1 * arg1) / (r1 * arg1**2 + dx1**2 * r1))
-                - ((dx2**2 - r2 * arg6) / (r2 * arg6**2 + dx2**2 * r2))
-                + ((dx2**2 - r3 * arg11) / (r3 * arg11**2 + dx2**2 * r3))
-                - ((dx1**2 - r4 * arg16) / (r4 * arg16**2 + dx1**2 * r4))
-                + ((dx2**2 - r5 * arg21) / (r5 * arg21**2 + dx2**2 * r5))
-                - ((dx1**2 - r6 * arg26) / (r6 * arg26**2 + dx1**2 * r6))
-                + ((dx1**2 - r7 * arg31) / (r7 * arg31**2 + dx1**2 * r7))
-                - ((dx2**2 - r8 * arg36) / (r8 * arg36**2 + dx2**2 * r8))
+                ((dx1 ** 2 - r1 * arg1) / (r1 * arg1 ** 2 + dx1 ** 2 * r1))
+                - ((dx2 ** 2 - r2 * arg6) / (r2 * arg6 ** 2 + dx2 ** 2 * r2))
+                + ((dx2 ** 2 - r3 * arg11) / (r3 * arg11 ** 2 + dx2 ** 2 * r3))
+                - ((dx1 ** 2 - r4 * arg16) / (r4 * arg16 ** 2 + dx1 ** 2 * r4))
+                + ((dx2 ** 2 - r5 * arg21) / (r5 * arg21 ** 2 + dx2 ** 2 * r5))
+                - ((dx1 ** 2 - r6 * arg26) / (r6 * arg26 ** 2 + dx1 ** 2 * r6))
+                + ((dx1 ** 2 - r7 * arg31) / (r7 * arg31 ** 2 + dx1 ** 2 * r7))
+                - ((dx2 ** 2 - r8 * arg36) / (r8 * arg36 ** 2 + dx2 ** 2 * r8))
             )
 
             rows["bxx"][0, nC : 2 * nC] = (
@@ -425,14 +471,14 @@ class Simulation3DIntegral(BasePFSimulation):
                 - dy1 / (r6 * arg30)
             )
             rows["byy"][0, nC : 2 * nC] = 2 * (
-                ((dy2**2 - r1 * arg2) / (r1 * arg2**2 + dy2**2 * r1))
-                - ((dy2**2 - r2 * arg7) / (r2 * arg7**2 + dy2**2 * r2))
-                + ((dy2**2 - r3 * arg12) / (r3 * arg12**2 + dy2**2 * r3))
-                - ((dy2**2 - r4 * arg17) / (r4 * arg17**2 + dy2**2 * r4))
-                + ((dy1**2 - r5 * arg22) / (r5 * arg22**2 + dy1**2 * r5))
-                - ((dy1**2 - r6 * arg27) / (r6 * arg27**2 + dy1**2 * r6))
-                + ((dy1**2 - r7 * arg32) / (r7 * arg32**2 + dy1**2 * r7))
-                - ((dy1**2 - r8 * arg37) / (r8 * arg37**2 + dy1**2 * r8))
+                ((dy2 ** 2 - r1 * arg2) / (r1 * arg2 ** 2 + dy2 ** 2 * r1))
+                - ((dy2 ** 2 - r2 * arg7) / (r2 * arg7 ** 2 + dy2 ** 2 * r2))
+                + ((dy2 ** 2 - r3 * arg12) / (r3 * arg12 ** 2 + dy2 ** 2 * r3))
+                - ((dy2 ** 2 - r4 * arg17) / (r4 * arg17 ** 2 + dy2 ** 2 * r4))
+                + ((dy1 ** 2 - r5 * arg22) / (r5 * arg22 ** 2 + dy1 ** 2 * r5))
+                - ((dy1 ** 2 - r6 * arg27) / (r6 * arg27 ** 2 + dy1 ** 2 * r6))
+                + ((dy1 ** 2 - r7 * arg32) / (r7 * arg32 ** 2 + dy1 ** 2 * r7))
+                - ((dy1 ** 2 - r8 * arg37) / (r8 * arg37 ** 2 + dy1 ** 2 * r8))
             )
             rows["byy"][0, 2 * nC :] = (
                 dy2 / (r1 * arg3)
@@ -456,14 +502,14 @@ class Simulation3DIntegral(BasePFSimulation):
             rows["bxy"] = np.zeros((1, 3 * nC))
 
             rows["bxy"][0, 0:nC] = 2 * (
-                ((dx1 * arg4) / (r1 * arg1**2 + (dx1**2) * r1))
-                - ((dx2 * arg9) / (r2 * arg6**2 + (dx2**2) * r2))
-                + ((dx2 * arg14) / (r3 * arg11**2 + (dx2**2) * r3))
-                - ((dx1 * arg19) / (r4 * arg16**2 + (dx1**2) * r4))
-                + ((dx2 * arg24) / (r5 * arg21**2 + (dx2**2) * r5))
-                - ((dx1 * arg29) / (r6 * arg26**2 + (dx1**2) * r6))
-                + ((dx1 * arg34) / (r7 * arg31**2 + (dx1**2) * r7))
-                - ((dx2 * arg39) / (r8 * arg36**2 + (dx2**2) * r8))
+                ((dx1 * arg4) / (r1 * arg1 ** 2 + (dx1 ** 2) * r1))
+                - ((dx2 * arg9) / (r2 * arg6 ** 2 + (dx2 ** 2) * r2))
+                + ((dx2 * arg14) / (r3 * arg11 ** 2 + (dx2 ** 2) * r3))
+                - ((dx1 * arg19) / (r4 * arg16 ** 2 + (dx1 ** 2) * r4))
+                + ((dx2 * arg24) / (r5 * arg21 ** 2 + (dx2 ** 2) * r5))
+                - ((dx1 * arg29) / (r6 * arg26 ** 2 + (dx1 ** 2) * r6))
+                + ((dx1 * arg34) / (r7 * arg31 ** 2 + (dx1 ** 2) * r7))
+                - ((dx2 * arg39) / (r8 * arg36 ** 2 + (dx2 ** 2) * r8))
             )
             rows["bxy"][0, nC : 2 * nC] = (
                 dy2 / (r1 * arg5)
@@ -487,14 +533,14 @@ class Simulation3DIntegral(BasePFSimulation):
             rows["bxz"] = np.zeros((1, 3 * nC))
 
             rows["bxz"][0, 0:nC] = 2 * (
-                ((dx1 * arg5) / (r1 * (arg1**2) + (dx1**2) * r1))
-                - ((dx2 * arg10) / (r2 * (arg6**2) + (dx2**2) * r2))
-                + ((dx2 * arg15) / (r3 * (arg11**2) + (dx2**2) * r3))
-                - ((dx1 * arg20) / (r4 * (arg16**2) + (dx1**2) * r4))
-                + ((dx2 * arg25) / (r5 * (arg21**2) + (dx2**2) * r5))
-                - ((dx1 * arg30) / (r6 * (arg26**2) + (dx1**2) * r6))
-                + ((dx1 * arg35) / (r7 * (arg31**2) + (dx1**2) * r7))
-                - ((dx2 * arg40) / (r8 * (arg36**2) + (dx2**2) * r8))
+                ((dx1 * arg5) / (r1 * (arg1 ** 2) + (dx1 ** 2) * r1))
+                - ((dx2 * arg10) / (r2 * (arg6 ** 2) + (dx2 ** 2) * r2))
+                + ((dx2 * arg15) / (r3 * (arg11 ** 2) + (dx2 ** 2) * r3))
+                - ((dx1 * arg20) / (r4 * (arg16 ** 2) + (dx1 ** 2) * r4))
+                + ((dx2 * arg25) / (r5 * (arg21 ** 2) + (dx2 ** 2) * r5))
+                - ((dx1 * arg30) / (r6 * (arg26 ** 2) + (dx1 ** 2) * r6))
+                + ((dx1 * arg35) / (r7 * (arg31 ** 2) + (dx1 ** 2) * r7))
+                - ((dx2 * arg40) / (r8 * (arg36 ** 2) + (dx2 ** 2) * r8))
             )
             rows["bxz"][0, nC : 2 * nC] = (
                 1 / r1 - 1 / r2 + 1 / r3 - 1 / r4 + 1 / r5 - 1 / r6 + 1 / r7 - 1 / r8
@@ -521,14 +567,14 @@ class Simulation3DIntegral(BasePFSimulation):
                 1 / r3 - 1 / r2 + 1 / r5 - 1 / r8 + 1 / r1 - 1 / r4 + 1 / r7 - 1 / r6
             )
             rows["byz"][0, nC : 2 * nC] = 2 * (
-                (((dy2 * arg5) / (r1 * (arg2**2) + (dy2**2) * r1)))
-                - (((dy2 * arg10) / (r2 * (arg7**2) + (dy2**2) * r2)))
-                + (((dy2 * arg15) / (r3 * (arg12**2) + (dy2**2) * r3)))
-                - (((dy2 * arg20) / (r4 * (arg17**2) + (dy2**2) * r4)))
-                + (((dy1 * arg25) / (r5 * (arg22**2) + (dy1**2) * r5)))
-                - (((dy1 * arg30) / (r6 * (arg27**2) + (dy1**2) * r6)))
-                + (((dy1 * arg35) / (r7 * (arg32**2) + (dy1**2) * r7)))
-                - (((dy1 * arg40) / (r8 * (arg37**2) + (dy1**2) * r8)))
+                (((dy2 * arg5) / (r1 * (arg2 ** 2) + (dy2 ** 2) * r1)))
+                - (((dy2 * arg10) / (r2 * (arg7 ** 2) + (dy2 ** 2) * r2)))
+                + (((dy2 * arg15) / (r3 * (arg12 ** 2) + (dy2 ** 2) * r3)))
+                - (((dy2 * arg20) / (r4 * (arg17 ** 2) + (dy2 ** 2) * r4)))
+                + (((dy1 * arg25) / (r5 * (arg22 ** 2) + (dy1 ** 2) * r5)))
+                - (((dy1 * arg30) / (r6 * (arg27 ** 2) + (dy1 ** 2) * r6)))
+                + (((dy1 * arg35) / (r7 * (arg32 ** 2) + (dy1 ** 2) * r7)))
+                - (((dy1 * arg40) / (r8 * (arg37 ** 2) + (dy1 ** 2) * r8)))
             )
             rows["byz"][0, 2 * nC :] = (
                 dz2 / (r1 * arg3)
@@ -668,6 +714,24 @@ class Simulation3DIntegral(BasePFSimulation):
         )
 
 
+class SimulationEquivalentSourceLayer(
+    BaseEquivalentSourceLayerSimulation, Simulation3DIntegral
+):
+    """
+    Equivalent source layer simulation
+
+    Parameters
+    ----------
+    mesh : discretize.BaseMesh
+        A 2D tensor or tree mesh defining discretization along the x and y directions
+    cell_z_top : numpy.ndarray or float
+        Define the elevations for the top face of all cells in the layer
+    cell_z_bottom : numpy.ndarray or float
+        Define the elevations for the bottom face of all cells in the layer
+
+    """
+
+
 class Simulation3DDifferential(BaseMagneticPDESimulation):
     """
     Secondary field approach using differential equations!
@@ -683,6 +747,19 @@ class Simulation3DDifferential(BaseMagneticPDESimulation):
         Dface = self.mesh.faceDiv
         Mc = sdiag(self.mesh.vol)
         self._Div = Mc * Dface * Pin.T * Pin
+
+    # @property
+    # def survey(self):
+    #     return self._survey
+
+    # @survey.setter
+    # def survey(self, obj):
+    #     if isinstance(obj, Survey):
+    #         self._survey = obj
+    #     else:
+    #         raise TypeError(
+    #             "Survey must be an instace of class {Survey}".format(Survey)
+    #         )
 
     @property
     def MfMuI(self):
@@ -861,7 +938,7 @@ class Simulation3DDifferential(BaseMagneticPDESimulation):
         B0 = self.getB0()
 
         MfMuIvec = 1 / self.MfMui.diagonal()
-        dMfMuI = sdiag(MfMuIvec**2) * self.mesh.aveF2CC.T * sdiag(vol * 1.0 / mu**2)
+        dMfMuI = sdiag(MfMuIvec ** 2) * self.mesh.aveF2CC.T * sdiag(vol * 1.0 / mu ** 2)
 
         # A = self._Div*self.MfMuI*self._Div.T
         # RHS = Div*MfMuI*MfMu0*B0 - Div*B0 + Mc*Dface*Pout.T*Bbc
@@ -938,7 +1015,7 @@ class Simulation3DDifferential(BaseMagneticPDESimulation):
         B0 = self.getB0()
 
         MfMuIvec = 1 / self.MfMui.diagonal()
-        dMfMuI = sdiag(MfMuIvec**2) * self.mesh.aveF2CC.T * sdiag(vol * 1.0 / mu**2)
+        dMfMuI = sdiag(MfMuIvec ** 2) * self.mesh.aveF2CC.T * sdiag(vol * 1.0 / mu ** 2)
 
         # A = self._Div*self.MfMuI*self._Div.T
         # RHS = Div*MfMuI*MfMu0*B0 - Div*B0 + Mc*Dface*Pout.T*Bbc
@@ -1105,21 +1182,27 @@ def MagneticsDiffSecondaryInv(mesh, model, data, **kwargs):
     Inversion module for MagneticsDiffSecondary
 
     """
-    from SimPEG import Optimization, Regularization, Parameters, ObjFunction, Inversion
+    from SimPEG import (
+        optimization,
+        regularization,
+        directives,
+        objective_function,
+        inversion,
+    )
 
     prob = Simulation3DDifferential(mesh, survey=data, mu=model)
 
     miter = kwargs.get("maxIter", 10)
 
     # Create an optimization program
-    opt = Optimization.InexactGaussNewton(maxIter=miter)
+    opt = optimization.InexactGaussNewton(maxIter=miter)
     opt.bfgsH0 = Solver(sp.identity(model.nP), flag="D")
     # Create a regularization program
-    reg = Regularization.Tikhonov(model)
+    reg = regularization.WeightedLeastSquares(model)
     # Create an objective function
-    beta = Parameters.BetaSchedule(beta0=1e0)
-    obj = ObjFunction.BaseObjFunction(prob, reg, beta=beta)
+    beta = directives.BetaSchedule(beta0=1e0)
+    obj = objective_function.BaseObjFunction(prob, reg, beta=beta)
     # Create an inversion object
-    inv = Inversion.BaseInversion(obj, opt)
+    inv = inversion.BaseInversion(obj, opt)
 
     return inv, reg
